@@ -71,6 +71,11 @@ int main(int argc, char**argv)
     log_message(LOG_DEBUG, message);
   }
 
+  /* closing the file */
+  if (close(fd) == -1) {
+    log_message(LOG_ERR, "Error on closing the file.");
+  }
+
   /* closing the logging system */
   closelog();
 
