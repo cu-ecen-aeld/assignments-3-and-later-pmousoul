@@ -81,7 +81,7 @@ bool do_exec(int count, ...)
         execv(command[0], command);
         
         // execution error because execv should not return
-        return false;
+        exit(EXIT_FAILURE);
     }
     if (waitpid(pid, &status, 0) == -1) { // check for error on child matching PID
         return false;
@@ -149,7 +149,7 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
         execv(command[0], command);
         
         // execution error because execv should not return
-        return false;
+        exit(EXIT_FAILURE);
     }
     // close fd in parent process
     close(fd);
