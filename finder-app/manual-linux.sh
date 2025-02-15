@@ -10,10 +10,9 @@ KERNEL_REPO=git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.gi
 KERNEL_VERSION=v5.15.163
 BUSYBOX_VERSION=1_33_1
 FINDER_APP_DIR=$(realpath $(dirname $0))
+REPO_PATH="${FINDER_APP_DIR}/.."
 ARCH=arm64
 export CROSS_COMPILE=aarch64-none-linux-gnu-
-CROSS_COMPILE_PATH=/home/pmousoul/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu
-REPO_PATH=/home/pmousoul/Repos/assignment-1-pmousoul
 
 
 if [ $# -lt 1 ]
@@ -87,10 +86,10 @@ ${CROSS_COMPILE}readelf -a bin/busybox | grep "program interpreter"
 ${CROSS_COMPILE}readelf -a bin/busybox | grep "Shared library"
 
 # TODO: Add library dependencies to rootfs
-cp "${CROSS_COMPILE_PATH}/libc/lib/ld-linux-aarch64.so.1" "${OUTDIR}/rootfs/lib"
-cp "${CROSS_COMPILE_PATH}/libc/lib64/libm.so.6" "${OUTDIR}/rootfs/lib64"
-cp "${CROSS_COMPILE_PATH}/libc/lib64/libresolv.so.2" "${OUTDIR}/rootfs/lib64"
-cp "${CROSS_COMPILE_PATH}/libc/lib64/libc.so.6" "${OUTDIR}/rootfs/lib64"
+cp "${FINDER_APP_DIR}/arm64_rootfs/ld-linux-aarch64.so.1" "${OUTDIR}/rootfs/lib"
+cp "${FINDER_APP_DIR}/arm64_rootfs/libm.so.6" "${OUTDIR}/rootfs/lib64"
+cp "${FINDER_APP_DIR}/arm64_rootfs/libresolv.so.2" "${OUTDIR}/rootfs/lib64"
+cp "${FINDER_APP_DIR}/arm64_rootfs/libc.so.6" "${OUTDIR}/rootfs/lib64"
 
 # TODO: Make device nodes
 cd "${OUTDIR}/rootfs"
