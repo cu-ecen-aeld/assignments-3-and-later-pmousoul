@@ -21,7 +21,9 @@ void* threadfunc(void* thread_param)
     int wait_to_release_ms = thread_func_args->wait_to_release_ms;
 
     // wait
-    usleep(wait_to_obtain_ms);
+    if (usleep(wait_to_obtain_ms*1000) != 0){
+        thread_func_args->thread_complete_success = false;
+    }
 
     // obtain mutex
     if (pthread_mutex_lock(mutex) != 0){
@@ -29,8 +31,9 @@ void* threadfunc(void* thread_param)
     }
 
     // wait
-    usleep(wait_to_release_ms);
-
+    if (usleep(wait_to_release_ms*1000) != 0){
+        thread_func_args->thread_complete_success = false;
+    }
     // release mutex
     if (pthread_mutex_unlock(mutex) != 0){
         thread_func_args->thread_complete_success = false;
