@@ -60,7 +60,11 @@ bool start_thread_obtaining_mutex(pthread_t *thread, pthread_mutex_t *mutex,int 
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
     // allocate memory for thread_data
-    struct thread_data* thread_param = (struct thread_data*) malloc(sizeof(struct thread_data));
+    struct thread_data* thread_param = (struct thread_data*)malloc(sizeof(struct thread_data));
+    if (thread_param == (struct thread_data*)NULL){
+        // memory allocation error
+        return false;
+    }
 
     // setup mutex and wait arguments
     thread_param->mutex = mutex;
