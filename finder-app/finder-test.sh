@@ -59,7 +59,7 @@ do
 	writer "$WRITEDIR/${username}$i.txt" "$WRITESTR"
 done
 
-./finder.sh "$WRITEDIR" "$WRITESTR" > "$OUTPUTFILE"
+finder.sh "$WRITEDIR" "$WRITESTR" > "$OUTPUTFILE"
 OUTPUTSTRING=$(cat ${OUTPUTFILE})
 
 # remove temporary directories
