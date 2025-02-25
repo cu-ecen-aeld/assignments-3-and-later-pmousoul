@@ -20,11 +20,14 @@
 
 #include <syslog.h>
 
+// struct sigaction incomplete error related
+#define _XOPEN_SOURCE 700
+
 #define PORT "9000"  // the port users will be connecting to
 #define BACKLOG 10   // how many pending connections queue will hold
 
-// max number of bytes we can get at once based on 'ulimit -s'
-#define MAXDATASIZE 8388608
+// max number of bytes we can get at once (8KiB)
+#define MAXDATASIZE (8192*1024)
 
 char* filename = "/var/tmp/aesdsocketdata";
 
@@ -47,7 +50,7 @@ void sigchld_handler(int s) {
     errno = saved_errno;
 }
 
-void sighandler(void) {
+void sighandler(int dummy) {
     // write to syslog
     log_message(LOG_INFO, "Caught signal, exiting");
 
@@ -61,7 +64,9 @@ void sighandler(void) {
         printf("Exiting: Error: Unable to delete the file.\n");
     }
 
-    // exit
+    // exit gracefully calling exit()
+    // completing any open connection operations,
+    // closing any open sockets 
     exit(0);
 }
 
@@ -97,26 +102,26 @@ int main(int argc, char**argv)
     hints.ai_flags = AI_PASSIVE; // use my IP
 
     if ((rv = getaddrinfo(NULL, PORT, &hints, &servinfo)) != 0) {
-        fprintf(stderr, "Server: getaddrinfo: %s\n", gai_strerror(rv));
-        return -1;
+        fprintf(stderr, "Server setup: getaddrinfo: %s\n", gai_strerror(rv));
+        exit(-1);
     }
 
     // loop through all the results and bind to the first we can
     for(p = servinfo; p != NULL; p = p->ai_next) {
         if ((sockfd = socket(p->ai_family, p->ai_socktype,
                 p->ai_protocol)) == -1) {
-            perror("Server: socket error.");
+            perror("Server setup: socket error.");
             continue;
         }
 
         if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
-            perror("Server: setsockopt error.");
-            return -1;
+            perror("Server setup: setsockopt error.");
+            exit(-1);
         }
 
         if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
             close(sockfd);
-            perror("Server: bind error.");
+            perror("Server setup: bind error.");
             continue;
         }
 
@@ -126,26 +131,41 @@ int main(int argc, char**argv)
     freeaddrinfo(servinfo); // all done with this structure
 
     if (p == NULL)  {
-        fprintf(stderr, "Server: failed to bind.\n");
+        fprintf(stderr, "Server setup: failed to bind.\n");
         return -1;
     }
 
     // listen to the socket
     if (listen(sockfd, BACKLOG) == -1) {
-        perror("Server: listen error.");
+        perror("Server setup: listen error.");
         exit(-1);
     }
 
-    sa.sa_handler = sigchld_handler; // reap all dead processes
+    // run as a daemon
+    if (argc == 2 && strcmp(argv[1], "-d") == 0) {
+        switch(fork()) {                  // become background process
+            case -1: return -1;           // fork() failed
+            case 0: break;                // child falls through
+            default: exit(0); // parent terminates
+        }
+
+        if(setsid() == -1) {              // become leader of new session
+            exit(-1);
+        }
+    }
+
+    // Execute sighandler() when the following signals are received 
+    signal(SIGINT, sighandler);
+    signal(SIGTERM, sighandler);
+    
+    // reap all dead processes
+    sa.sa_handler = sigchld_handler;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_RESTART;
     if (sigaction(SIGCHLD, &sa, NULL) == -1) {
         perror("Server: sigaction error.");
         exit(-1);
     }
-
-    signal(SIGINT, sighandler);
-    signal(SIGTERM, sighandler);
 
     printf("Server: waiting for connections...\n");
 
@@ -160,7 +180,7 @@ int main(int argc, char**argv)
         inet_ntop(their_addr.ss_family,
             get_in_addr((struct sockaddr *)&their_addr),
             s, sizeof(s));
-        printf("server: got connection from %s\n", s);
+        printf("Server: got connection from %s\n", s);
 
         // write accept connection message to syslog
         char message[100];
@@ -171,7 +191,7 @@ int main(int argc, char**argv)
         int a_fd;
         a_fd = open(filename, O_WRONLY | O_CREAT | O_APPEND, 0644);
         if (a_fd == -1) {
-            perror("Server: File could not be created.");
+            perror("Clent service: File for append could not be created.");
             exit(-1);
         }
 
@@ -224,7 +244,7 @@ int main(int argc, char**argv)
                     else {
                         // Print an error message to the standard error
                         // stream if the file cannot be opened.
-                        fprintf(stderr, "Unable to open file!\n");
+                        fprintf(stderr, "Client service: Unable to open file for reading!\n");
                     }
                 }
 
