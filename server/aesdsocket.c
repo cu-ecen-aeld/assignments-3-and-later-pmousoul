@@ -26,7 +26,7 @@
 #define PORT "9000"  // the port users will be connecting to
 #define BACKLOG 10   // how many pending connections queue will hold
 
-// max number of bytes we can get at once (8KiB)
+// max number of bytes we can get at once (8MiB)
 #define MAXDATASIZE (8192*1024)
 
 char* filename = "/var/tmp/aesdsocketdata";
