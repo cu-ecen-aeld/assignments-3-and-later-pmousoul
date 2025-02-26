@@ -1,0 +1,23 @@
+#!/bin/sh
+
+# Script whoch uses start-stop-daemon to start the aesdsocket application in daemon mode with the -d option.
+
+DAEMON_NAME=aesdsocket
+DAEMON_PATH=/usr/bin
+DAEMON_ARGS="-d"
+
+case "$1" in
+    start)
+        echo "Starting ${DAEMON_NAME}"
+        start-stop-daemon -S -n ${DAEMON_NAME} -a ${DAEMON_PATH}/${DAEMON_NAME} -- ${DAEMON_ARGS}
+        ;;
+    stop)
+        echo "Stopping ${DAEMON_NAME}"
+        start-stop-daemon -K -n ${DAEMON_NAME}
+        ;;
+    *)
+        echo "Usage: $0 {start|stop}"
+        exit 1
+esac
+
+exit 0
